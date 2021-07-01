@@ -93,10 +93,9 @@ class Network(object):
             # 计算临时变量z和a并存入self.zs和self._as
 
             #########################################
-            tz=np.dot(a,weight)
-            z=tz+bias
+            z=np.dot(a,weight)+bias
             self.zs.append(z)
-            a=sigmoid(z)
+            a=relu(z)
             self._as.append(a)
             #########################################
 
@@ -127,13 +126,12 @@ class Network(object):
         # 每个样本得的梯度求和、求平均
         self.dws[-1] = np.dot(self._as[-2].T, dl) / n
         self.dbs[-1] = np.sum(dl, axis=0, keepdims=True) / n
-        # 计算梯度
         for i in range(2, self.num_layers):
             # 计算梯度并存入self.dws和self.dbs，注意矩阵乘法和逐元素乘法
-
             ############################################################
-            self.dws.append(np.dot(self._as[i].T,dl)/n)
-            self.dbs.append(np.sum(dl,axis=0,keepdims=True)/n)
+            dl = np.dot(dl, self.weights[-i+1].T) * derivation_relu(self.zs[-i])  #注意求导形式
+            self.dws[-i]=np.dot(self._as[i].T,dl)/n
+            self.dbs[-i]=np.sum(dl,axis=0,keepdims=True)/n
             ############################################################
             
         self.zs = [] 
@@ -157,8 +155,10 @@ def train():
     n_hidden_layer = 3
     n_output_layer = 1
     n_class = 2
-    x = np.random.rand(n_batch, n_input_layer)
-    y = np.random.randint(0, n_class, size=n_batch)
+    #x = np.random.rand(n_batch, n_input_layer)
+    x=[[3,4],[3,4],[3,4],[3,4],[3,4]]
+    #y = np.random.randint(0, n_class, size=n_batch)
+    y=[0,1,1,1,0]
     net = Network((n_input_layer, n_hidden_layer, n_output_layer))
     print('initial weights:', net.weights)
     print('initial bias:', net.bias)
@@ -167,7 +167,7 @@ def train():
     ##################
     net.zero_grad()
     net.backward(x,y)
-    net.optimize(1)
+    net.optimize(0.5)
     ##################
 
     print('updated weights:', net.weights)
