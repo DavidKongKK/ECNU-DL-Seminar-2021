@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+
+
 def relu(z):
     """
     Args:
@@ -7,9 +9,10 @@ def relu(z):
     return:
         a: (batch_size, hidden_size)激活值
     """
-    a=np.maximum(z,0)
-    
+    a = np.maximum(z, 0)
+
     return a
+
 
 def derivation_relu(z):
     """
@@ -18,10 +21,11 @@ def derivation_relu(z):
     return:
         dz: (batch_size, hidden_size)导数值
     """
-    dz=z.copy()
-    dz[dz<=0]=0
-    dz[dz>0]=1
+    dz = z.copy()
+    dz[dz <= 0] = 0
+    dz[dz > 0] = 1
     return dz
+
 
 def sigmoid(z):
     """
@@ -30,8 +34,9 @@ def sigmoid(z):
     return:
         a: (batch_size, hidden_size)激活值
     """
-    a=1/(1+np.exp(-z))
+    a = 1/(1+np.exp(-z))
     return a
+
 
 def bi_cross_entropy(y, y_hat):
     """
@@ -44,18 +49,21 @@ def bi_cross_entropy(y, y_hat):
     n_batch = y_hat.shape[0]
     loss = -np.sum(np.log(y_hat)) / n_batch
     return loss
+
+
 def derivation_sigmoid_cross_entropy(y, y_hat):
     """
     Args:
         logits: (batch_size, output_size)， 网络的输出预测得分, 还没有进行 softmax概率化
         y: (batch_size, ) 每个样本的真实label
-    
+
     Return:
         \frac {\partial C}{\partial z^L}
         (batch_size, output_size)
     """
     y_hat -= 1
     return y_hat
+
 
 class Network(object):
     """
@@ -70,16 +78,17 @@ class Network(object):
         zs: list，存储前向传播临时变量
         _as：list，存储前向传播临时变量
     """
+
     def __init__(self, sizes):
         self.sizes = sizes
         self.num_layers = len(sizes)
-        self.weights = [np.random.randn(i, j) for i, j in zip(self.sizes[:-1], self.sizes[1:])]
+        self.weights = [np.random.randn(i, j) for i, j in zip(
+            self.sizes[:-1], self.sizes[1:])]
         self.bias = [np.random.randn(1, j) for j in self.sizes[1:]]
         self.dws = None
         self.dbs = None
-        self.zs = [] 
+        self.zs = []
         self._as = []
-
 
     def forward(self, x):
         """
@@ -89,13 +98,13 @@ class Network(object):
         a = x
         self._as.append(a)
         for weight, bias in zip(self.weights[:-1], self.bias[:-1]):
-            
+
             # 计算临时变量z和a并存入self.zs和self._as
 
             #########################################
-            z=np.dot(a,weight)+bias
+            z = np.dot(a, weight)+bias
             self.zs.append(z)
-            a=relu(z)
+            a = relu(z)
             self._as.append(a)
             #########################################
 
@@ -103,7 +112,7 @@ class Network(object):
         y_hat = sigmoid(logits)
         self.zs.append(logits)
         self._as.append(y_hat)
-        
+
         return y_hat
 
     def backward(self, x, y):
@@ -119,65 +128,74 @@ class Network(object):
 
         ################# 反向传播梯度计算 ##############################
         # 输出层误差
-        dl = derivation_sigmoid_cross_entropy(y, y_hat)
+        dz = derivation_sigmoid_cross_entropy(y, y_hat)
         # batch的大小
         n = len(x)
         # 最后一层的梯度
         # 每个样本得的梯度求和、求平均
-        self.dws[-1] = np.dot(self._as[-2].T, dl) / n
-        self.dbs[-1] = np.sum(dl, axis=0, keepdims=True) / n
+        self.dws[-1] = np.dot(self._as[-2].T, dz) / n
+        self.dbs[-1] = np.sum(dz, axis=0, keepdims=True) / n
         for i in range(2, self.num_layers):
             # 计算梯度并存入self.dws和self.dbs，注意矩阵乘法和逐元素乘法
             ############################################################
-            dl = np.dot(dl, self.weights[-i+1].T) * derivation_relu(self.zs[-i])  #注意求导形式
-            self.dws[-i]=np.dot(self._as[i].T,dl)/n
-            self.dbs[-i]=np.sum(dl,axis=0,keepdims=True)/n
+            dz = np.dot(dz, self.weights[-i+1].T) * \
+                derivation_relu(self.zs[-i])  # 注意求导形式
+            self.dws[-i] = np.dot(self._as[i].T, dz)/n
+            self.dbs[-i] = np.sum(dz, axis=0, keepdims=True)/n
             ############################################################
-            
-        self.zs = [] 
+
+        self.zs = []
         self._as = []
         return loss
-    
+
     def zero_grad(self):
         """清空梯度"""
-        self.dws = [np.zeros((i, j)) for i, j in zip(self.sizes[:-1], self.sizes[1:])]
+        self.dws = [np.zeros((i, j))
+                    for i, j in zip(self.sizes[:-1], self.sizes[1:])]
         self.dbs = [np.zeros((1, j)) for j in self.sizes[1:]]
-        
+
     def optimize(self, learning_rate):
         """更新梯度"""
-        self.weights = [weight - learning_rate * dw for weight, dw in zip(self.weights, self.dws)]
-        self.bias = [bias - learning_rate * db for bias, db in zip(self.bias, self.dbs)]
+        self.weights = [weight - learning_rate *
+                        dw for weight, dw in zip(self.weights, self.dws)]
+        self.bias = [bias - learning_rate *
+                     db for bias, db in zip(self.bias, self.dbs)]
 
-        
+
 def train():
-    
+
     n_batch = 5
     n_input_layer = 2
     n_hidden_layer = 3
     n_output_layer = 1
     n_class = 2
     x = np.random.rand(n_batch, n_input_layer)
-    #x=[[3,4],[3,4],[3,4],[3,4],[3,4]]
+    # x=[[3,4],[3,4],[3,4],[3,4],[3,4]]
     y = np.random.randint(0, n_class, size=n_batch)
-    #y=[0,1,1,1,0]
+    # y=[0,1,1,1,0]
     net = Network((n_input_layer, n_hidden_layer, n_output_layer))
     print('initial weights:', net.weights)
     print('initial bias:', net.bias)
     # 执行梯度计算
-    i=1
+    i = 1
+
+    net.zero_grad()
+    loss = net.backward(x, y)
+    net.optimize(0.1)
+    print('loss={0}'.format(str(loss)))
+    
     ##################
-    while True:
+    while loss > 0.0001:
         net.zero_grad()
-        loss=net.backward(x,y)
-        net.optimize(0.5)
+        loss = net.backward(x, y)
+        net.optimize(0.1)
         # print('updated weights:', net.weights)
         # print('updated bias:', net.bias)
         print('loss={0}'.format(str(loss)))
-        i+=1
-        if loss<=0.0001:
-            break
+        i += 1
     ##################
+
     print(i)
-    
+
 
 train()
