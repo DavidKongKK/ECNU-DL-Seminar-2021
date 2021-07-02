@@ -136,6 +136,7 @@ class Network(object):
             
         self.zs = [] 
         self._as = []
+        return loss
     
     def zero_grad(self):
         """清空梯度"""
@@ -155,22 +156,28 @@ def train():
     n_hidden_layer = 3
     n_output_layer = 1
     n_class = 2
-    #x = np.random.rand(n_batch, n_input_layer)
-    x=[[3,4],[3,4],[3,4],[3,4],[3,4]]
-    #y = np.random.randint(0, n_class, size=n_batch)
-    y=[0,1,1,1,0]
+    x = np.random.rand(n_batch, n_input_layer)
+    #x=[[3,4],[3,4],[3,4],[3,4],[3,4]]
+    y = np.random.randint(0, n_class, size=n_batch)
+    #y=[0,1,1,1,0]
     net = Network((n_input_layer, n_hidden_layer, n_output_layer))
     print('initial weights:', net.weights)
     print('initial bias:', net.bias)
     # 执行梯度计算
+    i=1
+    ##################
+    while True:
+        net.zero_grad()
+        loss=net.backward(x,y)
+        net.optimize(0.5)
+        # print('updated weights:', net.weights)
+        # print('updated bias:', net.bias)
+        print('loss={0}'.format(str(loss)))
+        i+=1
+        if loss<=0.0001:
+            break
+    ##################
+    print(i)
     
-    ##################
-    net.zero_grad()
-    net.backward(x,y)
-    net.optimize(0.5)
-    ##################
-
-    print('updated weights:', net.weights)
-    print('updated bias:', net.bias)
 
 train()
