@@ -1,20 +1,18 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-'''
-
-'''
 
 x=[0.0,0.5,0.8,1.1,1.5,1.9,2.2,2.4,2.6,3.0]
 x=np.array(x)
 y=[0.9,2.1,2.7,3.1,4.1,4.8,5.1,5.9,6.0,7.0]
 y=np.array(y)
 
-
 n=10
+
 w=1.0
 b=1.0
-lr=0.01
+
+lr=0.1
 sgd_loss=0.0
 
 def init_param():
@@ -42,19 +40,19 @@ def sgd():
             yhat=forward()
             loss=calc_loss(y,yhat)
 
-            dy=(y[i]-yhat[i])
+            dy=yhat[i]-y[i]
             dw=dy*x[i]
             db=dy
 
-            w=w+lr*dw
-            b=b+lr*db
+            w=w-lr*dw
+            b=b-lr*db
             
             print("loss={0}".format(str(loss)))
         sgd_loss_list.append(loss)
     return loss
 
 beta1=0.9
-
+mom_loss=[]
 def momentum():
     yhat=[0 for i in range(10)]
     
@@ -64,12 +62,12 @@ def momentum():
     global b
     loss=1e8
     i=0
-    while loss>sgd_loss:
+    while loss>=sgd_loss:
         i+=1
         yhat=forward()
         loss=calc_loss(y,yhat)
 
-        dy=(yhat-y)
+        dy=yhat-y
         dw=np.dot(dy,x.T)/(1*n)
         db=np.sum(dy,axis=0,keepdims=True)/(1*n)
 
@@ -80,11 +78,13 @@ def momentum():
         b=b-lr*vdb
         
         #print("loss={0}".format(str(loss)))
+        mom_loss.append(loss)
     return i
 
 beta2=0.9
 
 lr=0.1
+rmsp_loss=[]
 def rmsprop():
     yhat=[0 for i in range(10)]
     
@@ -102,7 +102,7 @@ def rmsprop():
         yhat=forward()
         loss=calc_loss(y,yhat)
 
-        dy=(yhat-y)
+        dy=yhat-y
         dw=np.dot(dy,x.T)/(1*n)
         db=np.sum(dy,axis=0,keepdims=True)/(1*n)
 
@@ -111,7 +111,8 @@ def rmsprop():
 
         w=w-lr*dw/math.sqrt(sdw+epsilon)
         b=b-lr*db/math.sqrt(sdb+epsilon)
-        
+
+        #rmsp_loss.append()
         #print("loss={0}".format(str(loss)))
 
     return i
@@ -138,7 +139,7 @@ def adam():
         yhat=forward()
         loss=calc_loss(y,yhat)
 
-        dy=(yhat-y)
+        dy=yhat-y
         dw=np.dot(dy,x.T)/(1*n)
         db=np.sum(dy,axis=0,keepdims=True)/(1*n)
 
@@ -161,13 +162,16 @@ def adam():
         
     return t
 
-
+plt.plot(y,x)
+plt.show()
 sgd_loss=sgd()
 init_param()
-plt.plot(sgd_loss_list)
-plt.show()
+
 momentum_epoch=momentum()
 init_param()
+plt.plot(mom_loss)
+plt.show()
+
 rmsp_epoch=rmsprop()
 init_param()
 adam_epoch=adam()
